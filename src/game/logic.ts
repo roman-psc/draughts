@@ -1,40 +1,49 @@
 import { InlineKeyboard } from "grammy";
+import { Piece } from "./piece";
 
-const pieceToVisualMap = {
-  WHITE: "⚪",
-  BLACK: "⚫",
-  "WHITE:CROWNED": "🔴",
-  "BLACK:CROWNED": "🔵",
-  EMPTY: ".",
-} as const satisfies Record<Piece, string>;
+type Cells = readonly (readonly Piece[])[];
 
-type Piece = "WHITE" | "BLACK" | "WHITE:CROWNED" | "BLACK:CROWNED" | "EMPTY";
-export type Board = Piece[][];
+export class Board {
+  private readonly cells: Cells;
+  constructor(readonly existingCells?: Cells) {
+    if (existingCells) {
+      this.cells = existingCells;
+      return;
+    }
 
-export function createInitialBoard(): Board {
-  const board = Array(8)
-    .fill(null)
-    .map(() => Array<Piece>(8).fill("EMPTY")) satisfies Piece[][];
+    const cells = Array.from<undefined, Piece[]>({ length: 8 }, () =>
+      Array.from<undefined, Piece>({ length: 8 }, () =>
+        Piece.fromLabel("EMPTY"),
+      ),
+    );
 
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if ((r + c) % 2 !== 0) {
-        if (r < 3) board[r]![c] = "BLACK";
-        if (r > 4) board[r]![c] = "WHITE";
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if ((r + c) % 2 !== 0) {
+          if (r < 3) cells[r]![c] = Piece.fromLabel("BLACK");
+          if (r > 4) cells[r]![c] = Piece.fromLabel("WHITE");
+        }
       }
     }
+    this.cells = cells;
   }
-  return board;
-}
 
-export function renderBoard(board: Board, gameId: number): InlineKeyboard {
-  const keyboard = new InlineKeyboard();
-  board.forEach((row, r) => {
-    row.forEach((cell, c) => {
-      const label = pieceToVisualMap[cell];
-      keyboard.text(label, `move:${gameId}:${r}:${c}`);
+  toJSON(): Cells {
+    return this.cells;
+  }
+
+  static fromJSON(board: string): Board {
+    return new Board(JSON.parse(board));
+  }
+
+  render(gameId: number): InlineKeyboard {
+    const keyboard = new InlineKeyboard();
+    this.cells.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        keyboard.text(cell.toString(), `move:${gameId}:${r}:${c}`);
+      });
+      keyboard.row();
     });
-    keyboard.row();
-  });
-  return keyboard;
+    return keyboard;
+  }
 }
