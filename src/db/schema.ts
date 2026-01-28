@@ -10,3 +10,5 @@ export const games = sqliteTable("games", {
   selectedPos: text("selected_pos"),
   status: text("status").default("playing").notNull(),
 });
+
+export type GameInfo = (typeof games)["$inferSelect"];

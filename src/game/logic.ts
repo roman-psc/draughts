@@ -1,39 +1,41 @@
 import { InlineKeyboard } from "grammy";
-import { Piece } from "./piece";
 
-type Cells = readonly (readonly Piece[])[];
+import { Piece, type PieceLabel } from "./piece";
+
+export type PieceLabels = readonly (readonly PieceLabel[])[];
+export type BoardCells = readonly (readonly Piece[])[];
 
 export class Board {
-  private readonly cells: Cells;
-  constructor(readonly existingCells?: Cells) {
-    if (existingCells) {
-      this.cells = existingCells;
+  private readonly cells: BoardCells;
+  constructor(labels?: PieceLabels) {
+    if (labels) {
+      this.cells = Array.from(labels, (labelsRow) =>
+        Array.from(labelsRow, (label) => Piece.fromLabel(label)),
+      );
       return;
     }
 
-    const cells = Array.from<undefined, Piece[]>({ length: 8 }, () =>
-      Array.from<undefined, Piece>({ length: 8 }, () =>
-        Piece.fromLabel("EMPTY"),
-      ),
+    this.cells = Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, c) => {
+        if ((r + c) % 2 === 0) return Piece.fromLabel("EMPTY");
+        return Piece.fromLabel(r < 3 ? "BLACK" : r > 4 ? "WHITE" : "EMPTY");
+      }),
     );
-
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        if ((r + c) % 2 !== 0) {
-          if (r < 3) cells[r]![c] = Piece.fromLabel("BLACK");
-          if (r > 4) cells[r]![c] = Piece.fromLabel("WHITE");
-        }
-      }
-    }
-    this.cells = cells;
   }
 
-  toJSON(): Cells {
+  toJSON(): BoardCells {
     return this.cells;
   }
 
   static fromJSON(board: string): Board {
-    return new Board(JSON.parse(board));
+    const labels: PieceLabels = JSON.parse(board);
+    return new Board(labels);
+  }
+
+  getPiece(row: number, col: number): Piece {
+    const piece = this.cells[row]?.[col];
+    if (!piece) throw new Error("Piece not found");
+    return piece;
   }
 
   render(gameId: number): InlineKeyboard {

@@ -1,7 +1,19 @@
-import { Board } from "#game/logic";
+import { Board, type PieceLabels } from "#game/logic";
 import { describe, expect, it } from "bun:test";
 
 describe("Board", () => {
+  const testLabels: PieceLabels = [
+    ["EMPTY", "BLACK", "EMPTY", "BLACK", "EMPTY", "BLACK", "EMPTY", "BLACK"],
+    ["BLACK", "EMPTY", "BLACK", "EMPTY", "BLACK", "EMPTY", "BLACK", "EMPTY"],
+    ["EMPTY", "EMPTY", "EMPTY", "BLACK", "EMPTY", "BLACK", "EMPTY", "BLACK"],
+    ["BLACK", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY"],
+    ["EMPTY", "WHITE", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY"],
+    ["EMPTY", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY"],
+    ["EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE"],
+    ["WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY"],
+  ];
+  const testData = JSON.stringify(testLabels);
+
   describe("new Board", () => {
     it("should create initial board", () => {
       const board = new Board();
@@ -16,6 +28,11 @@ describe("Board", () => {
         ["EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE"],
         ["WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY", "WHITE", "EMPTY"],
       ]));
+    });
+
+    it("should create a board when `labels` is provided", () => {
+      const board = new Board(testLabels);
+      expect(JSON.stringify(board)).toEqual(JSON.stringify(testLabels));
     });
   });
 
@@ -106,6 +123,25 @@ describe("Board", () => {
         ],
         [],
       ]);
+    });
+  });
+
+  describe("Board.fromJSON", () => {
+    it("should create a board from JSON", () => {
+      const board = Board.fromJSON(testData);
+      expect(JSON.stringify(board)).toBe(testData);
+    });
+  });
+
+  describe("Board.getPiece", () => {
+    it("should return correct piece", () => {
+      const board = Board.fromJSON(testData);
+      const piece1 = board.getPiece(0, 0);
+      expect(piece1.type).toBe("empty");
+      const piece2 = board.getPiece(0, 1);
+      expect(piece2.color).toBe("black");
+      const piece3 = board.getPiece(4, 1);
+      expect(piece3.color).toBe("white");
     });
   });
 });
