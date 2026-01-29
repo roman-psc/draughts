@@ -115,7 +115,7 @@ export class Board {
 
         // Only one victim allowed per line (flying kings capture one per jump)
         if (hasVictim) {
-          return { type: "invalid", reason: "invalid_distance" };
+          return { type: "invalid", reason: "invalid_victim" };
         }
 
         hasVictim = true;
@@ -150,5 +150,83 @@ export class Board {
     }
 
     return { type: "invalid", reason: "invalid_distance" };
+  }
+
+  hasAnyCapture(color: "white" | "black"): boolean {
+    // Early exit as soon as we find any valid capture
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = this.getPiece(r, c);
+        if (!piece.isOfColor(color)) continue;
+        if (this.#pieceHasCapture(r, c)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Private helper: checks if the piece at (fromRow, fromCol) has at least one capture
+  // Returns early on first valid capture found (no list allocation)
+  #pieceHasCapture(fromRow: number, fromCol: number): boolean {
+    const piece = this.getPiece(fromRow, fromCol);
+
+    const directions: readonly (readonly [number, number])[] = [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1],
+    ];
+
+    for (const [dirR, dirC] of directions) {
+      // Compute max possible distance in this direction
+      let testR = fromRow + dirR;
+      let testC = fromCol + dirC;
+      let maxDist = 0;
+      while (testR >= 0 && testR < 8 && testC >= 0 && testC < 8) {
+        maxDist++;
+        testR += dirR;
+        testC += dirC;
+      }
+
+      // Need at least distance 2 for a capture
+      if (maxDist < 2) continue;
+
+      const isKing = piece.isCrowned();
+
+      // For men: only distance === 2 is possible
+      // For kings: any distance >= 2 (as long as exactly one opponent in path)
+      const startDist = isKing ? 2 : 2;
+      const endDist = isKing ? maxDist : 2;
+
+      for (let d = startDist; d <= endDist; d++) {
+        const toRow = fromRow + d * dirR;
+        const toCol = fromCol + d * dirC;
+
+        const moveInfo = this.getMoveInfo({
+          fromRow,
+          fromCol,
+          toRow,
+          toCol,
+        });
+
+        if (moveInfo.type === "capture") {
+          return true;
+        }
+
+        // For kings: if path blocked by own piece or multiple victims, later distances are impossible
+        // We can early-skip remaining distances in this direction
+        if (
+          isKing &&
+          moveInfo.type === "invalid" &&
+          (moveInfo.reason === "to_occupied" ||
+            moveInfo.reason === "invalid_victim")
+        ) {
+          break;
+        }
+      }
+    }
+
+    return false;
   }
 }
