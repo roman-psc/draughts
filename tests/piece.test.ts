@@ -106,13 +106,13 @@ describe("Piece", () => {
     });
 
     it("should handle two pieces of same color", () => {
-      expect(whtiePiece.isOfOppositeColor(whtiePiece)).toBeTrue();
-      expect(blackPiece.isOfOppositeColor(blackPiece)).toBeTrue();
+      expect(whtiePiece.isOfOppositeColor(whtiePiece)).toBeFalse();
+      expect(blackPiece.isOfOppositeColor(blackPiece)).toBeFalse();
     });
 
     it("should handle two pieces of different color", () => {
-      expect(whtiePiece.isOfOppositeColor(blackPiece)).toBeFalse();
-      expect(blackPiece.isOfOppositeColor(whtiePiece)).toBeFalse();
+      expect(whtiePiece.isOfOppositeColor(blackPiece)).toBeTrue();
+      expect(blackPiece.isOfOppositeColor(whtiePiece)).toBeTrue();
     });
   });
 
