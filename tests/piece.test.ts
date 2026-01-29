@@ -96,6 +96,26 @@ describe("Piece", () => {
     });
   });
 
+  describe("Piece.isOfOppositeColor", () => {
+    const emptyPiece = Piece.from("EMPTY");
+    const whtiePiece = Piece.from("WHITE");
+    const blackPiece = Piece.from("BLACK");
+
+    it("should handle two empty pieces", () => {
+      expect(emptyPiece.isOfOppositeColor(emptyPiece)).toBeFalse();
+    });
+
+    it("should handle two pieces of same color", () => {
+      expect(whtiePiece.isOfOppositeColor(whtiePiece)).toBeTrue();
+      expect(blackPiece.isOfOppositeColor(blackPiece)).toBeTrue();
+    });
+
+    it("should handle two pieces of different color", () => {
+      expect(whtiePiece.isOfOppositeColor(blackPiece)).toBeFalse();
+      expect(blackPiece.isOfOppositeColor(whtiePiece)).toBeFalse();
+    });
+  });
+
   describe("Piece.from", () => {
     it("should create an empty piece", () => {
       const piece = Piece.from("EMPTY");

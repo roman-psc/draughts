@@ -74,6 +74,16 @@ export class Piece<T extends PieceType = PieceType> {
     return this.color === color;
   }
 
+  isOfOppositeColor(piece: Piece): boolean {
+    return this.color === "white"
+      ? piece.color === "black"
+      : piece.color === "white";
+  }
+
+  isCrowned(): this is PieceOfVariant<"crowned"> {
+    return this.variant === "crowned";
+  }
+
   static from(label: PieceLabel): Piece {
     if (label === "EMPTY") return new Piece({ type: "empty" });
     if (label === "WHITE") {

@@ -12,7 +12,7 @@ type MoveInfo =
         | "from_empty"
         | "to_occupied"
         | "invalid_distance"
-        | "no_victim";
+        | "invalid_victim";
     }
   | { readonly type: "step" }
   | {
@@ -80,29 +80,75 @@ export class Board {
   }): MoveInfo {
     const piece = this.getPiece(fromRow, fromCol);
     if (piece.isEmpty()) return { type: "invalid", reason: "from_empty" };
-    if (!this.getPiece(toRow, toCol).isEmpty()) {
+
+    const toPiece = this.getPiece(toRow, toCol);
+    if (!toPiece.isEmpty()) {
       return { type: "invalid", reason: "to_occupied" };
     }
 
-    const distRow = toRow - fromRow;
-    const distCol = Math.abs(toCol - fromCol);
+    const dr = toRow - fromRow;
+    const dc = toCol - fromCol;
 
-    const isStep =
-      (piece.isOfColor("white") ? distRow === -1 : distRow === 1) &&
-      distCol === 1;
+    // Must be diagonal and not the same square
+    if (Math.abs(dr) !== Math.abs(dc) || (dr === 0 && dc === 0)) {
+      return { type: "invalid", reason: "invalid_distance" };
+    }
 
-    if (isStep) return { type: "step" };
+    const distance = Math.abs(dr);
+    const dirR = Math.sign(dr);
+    const dirC = Math.sign(dc);
 
-    const isCapture = Math.abs(distRow) === 2 && distCol === 2;
+    // Scan the path between from and to (exclusive)
+    let victim: { row: number; col: number } | null = null;
+    let hasVictim = false;
 
-    if (!isCapture) return { type: "invalid", reason: "invalid_distance" };
+    for (let i = 1; i < distance; i++) {
+      const checkRow = fromRow + i * dirR;
+      const checkCol = fromCol + i * dirC;
+      const checkPiece = this.getPiece(checkRow, checkCol);
 
-    const midRow = (toRow + fromRow) / 2;
-    const midCol = (toCol + fromCol) / 2;
-    const victim = this.getPiece(midRow, midCol);
+      if (!checkPiece.isEmpty()) {
+        // Must be an opponent
+        if (!checkPiece.isOfOppositeColor(piece)) {
+          return { type: "invalid", reason: "invalid_victim" };
+        }
 
-    if (victim.isEmpty()) return { type: "invalid", reason: "no_victim" };
+        // Only one victim allowed per line (flying kings capture one per jump)
+        if (hasVictim) {
+          return { type: "invalid", reason: "invalid_distance" };
+        }
 
-    return { type: "capture", victim: { row: midRow, col: midCol } };
+        hasVictim = true;
+        victim = { row: checkRow, col: checkCol };
+      }
+    }
+
+    const isCrowned = piece.isCrowned();
+
+    if (!hasVictim) {
+      if (isCrowned) {
+        // Kings can slide any distance diagonally in any direction if path is clear
+        return { type: "step" };
+      }
+
+      // Regular pieces: only one square forward
+      if (distance === 1) {
+        const forwardDir = piece.isOfColor("white") ? -1 : 1;
+        if (dirR === forwardDir) {
+          return { type: "step" };
+        }
+      }
+      return { type: "invalid", reason: "invalid_distance" };
+    }
+
+    // Regular pieces can only short-jump (distance 2); kings can long-jump
+    if (isCrowned || distance === 2) {
+      if (!victim) {
+        return { type: "invalid", reason: "invalid_victim" };
+      }
+      return { type: "capture", victim };
+    }
+
+    return { type: "invalid", reason: "invalid_distance" };
   }
 }
