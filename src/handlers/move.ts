@@ -24,7 +24,8 @@ function isTheirTurn(game: GameInfo, userId: number) {
 
 function parsePos(pos: string): { row: number; col: number } {
   const [row, col] = pos.split(",").map(Number);
-  if (!row || !col) throw new Error("Invalid data format");
+  if (row === undefined || col === undefined)
+    throw new Error(`Invalid data format: ${pos}`);
   return { row, col };
 }
 

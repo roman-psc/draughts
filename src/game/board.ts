@@ -6,7 +6,14 @@ export type PieceLabels = readonly (readonly PieceLabel[])[];
 export type BoardCells = readonly Piece[][];
 
 type MoveInfo =
-  | { readonly type: "invalid" }
+  | {
+      readonly type: "invalid";
+      readonly reason:
+        | "from_empty"
+        | "to_occupied"
+        | "invalid_distance"
+        | "no_victim";
+    }
   | { readonly type: "step" }
   | {
       readonly type: "capture";
@@ -72,8 +79,10 @@ export class Board {
     toCol: number;
   }): MoveInfo {
     const piece = this.getPiece(fromRow, fromCol);
-    if (piece.isEmpty()) return { type: "invalid" };
-    if (this.getPiece(toRow, toCol)) return { type: "invalid" };
+    if (piece.isEmpty()) return { type: "invalid", reason: "from_empty" };
+    if (!this.getPiece(toRow, toCol).isEmpty()) {
+      return { type: "invalid", reason: "to_occupied" };
+    }
 
     const distRow = toRow - fromRow;
     const distCol = Math.abs(toCol - fromCol);
@@ -86,13 +95,13 @@ export class Board {
 
     const isCapture = Math.abs(distRow) === 2 && distCol === 2;
 
-    if (!isCapture) return { type: "invalid" };
+    if (!isCapture) return { type: "invalid", reason: "invalid_distance" };
 
     const midRow = (toRow + fromRow) / 2;
     const midCol = (toCol + fromCol) / 2;
     const victim = this.getPiece(midRow, midCol);
 
-    if (victim.isEmpty()) return { type: "invalid" };
+    if (victim.isEmpty()) return { type: "invalid", reason: "no_victim" };
 
     return { type: "capture", victim: { row: midRow, col: midCol } };
   }

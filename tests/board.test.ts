@@ -144,4 +144,13 @@ describe("Board", () => {
       expect(piece3.color).toBe("white");
     });
   });
+
+  describe("Board.getMoveInfo", () => {
+    it("should return correct piece", () => {
+      const board = new Board();
+      expect(
+        board.getMoveInfo({ fromRow: 5, fromCol: 0, toRow: 4, toCol: 1 }),
+      ).toEqual({ type: "step" });
+    });
+  });
 });
